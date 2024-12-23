@@ -1,0 +1,21 @@
+{
+    "name": "astafiev/mind-box",
+    "autoload": {
+        "psr-4": {
+            "Astafiev\\MindBox\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "astafievK",
+            "email": "AstafevK@yandex.ru"
+        }
+    ],
+    "require": {
+        "ramsey/uuid": "^4.7",
+      "ext-pdo": "*",
+        "cijic/phpmorphy": "^0.3.4",
+        "react/event-loop": "^1.5",
+        "react/async": "^4.3"
+    }
+}
