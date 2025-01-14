@@ -22,20 +22,22 @@ function processClientsZN($data) {
                 $row['Клиент'] = getLongestFullname($allClientWorksheets);
             }
 
-            registration($row['Телефон'], $row['ЗаказНарядЗаказчикЭлПочта'], $row['ЗаказНарядЗаказчик']) . "\n";
+            $regResult = registration($row['Телефон'], $row['ЗаказНарядЗаказчикЭлПочта'], $row['ЗаказНарядЗаказчик']) . "\n";
 
-            $clientCarsVINs = getAllClientCarsZN(substr($row['Телефон'], 1));
+            if($regResult == 1) {
+                $clientCarsVINs = getAllClientCarsZN(substr($row['Телефон'], 1));
 
-            $clientCarsData = getCarsByVin($clientCarsVINs);
-
-            if(isset($clientCarsData)) {
-                foreach($clientCarsData as $car) {
-                    echo addCar($car);
-                    $mindboxId = checkOrderAlreadyExists($row['ЗаказНарядУИД'], $allClientOrders);
-
-                    echo processOrderZN($row, $car, $mindboxId);
+                $clientCarsData = getCarsByVin($clientCarsVINs);
+    
+                if(isset($clientCarsData)) {
+                    foreach($clientCarsData as $car) {
+                        echo addCar($car);
+                        $mindboxId = checkOrderAlreadyExists($row['ЗаказНарядУИД'], $allClientOrders);
+    
+                        echo processOrderZN($row, $car, $mindboxId);
+                    }
                 }
-            }          
+            }             
 
             $i++;
         } catch (Exception $e) {

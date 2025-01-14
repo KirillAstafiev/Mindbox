@@ -1,10 +1,6 @@
 <?php
 
-include "config/dictionaries.php";
-
 function createLinesOrderZN($queryData, $carVIN) {
-    global $orderLineStatuses;
-
     $lines = [];
     $lineNumber = 1;
 

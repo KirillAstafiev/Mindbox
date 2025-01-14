@@ -33,11 +33,11 @@ function getClientByPhoneNumber($mobilePhone){
                 break;
             case 'Ambiguous':
                 echo "Найдено более одного клиента по переданным идентификаторам.\n";
-                return true;
+                return false;
                 break;
             default:
                 echo "Неизвестный статус обработки клиента: $result\n";
-                return true;
+                return false;
                 break;
         }
     }

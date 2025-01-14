@@ -2,7 +2,7 @@
 
 include "config/dictionaries.php";
 
-function createLinesOrder($queryData, $carModelId) {
+function createLinesOrder($queryData, $carVin = null) {
     global $orderLineStatuses;
 
     $lines = [];
@@ -16,7 +16,7 @@ function createLinesOrder($queryData, $carModelId) {
             "status" => $orderLineStatuses[$row['ВидСобытия']],
             "product" => [
                 "ids" => [
-                    "externalProductId" => $carModelId ? $carModelId : 0
+                    "externalProductId" => isset($carVin) ? $carVin : 0
                 ]
             ],
             "customFields" => [

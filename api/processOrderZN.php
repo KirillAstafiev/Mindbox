@@ -55,6 +55,6 @@ function processOrderZN($clientData, $carData, $orderMindboxId = null){
         print_r($response);
         return "Ошибка создания/обновления ЗаказНаряд\n";
     } else {
-        return isset($orderMindboxId) ? "ЗаказНаряд обновлен" : "ЗаказНаряд создан";
+        return (isset($orderMindboxId) ? "ЗаказНаряд обновлен" : "ЗаказНаряд создан") . "\n";
     }
 }

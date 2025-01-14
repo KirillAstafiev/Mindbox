@@ -1,6 +1,5 @@
 <?php
 
-
 function getUniqueClients() {
     $dsn = "sqlsrv:Server=SRVMARKETOLOG;Database=Mindbox";
     $username = "sa";
@@ -11,54 +10,45 @@ function getUniqueClients() {
         $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
         $sql = "
-            WITH RankedPhones AS (
+            WITH LatestEventData AS (
                 SELECT 
-                    Телефон COLLATE Cyrillic_General_CI_AS AS Телефон,
-                    Клиент COLLATE Cyrillic_General_CI_AS AS ФИО,
-                    ЭлПочты COLLATE Cyrillic_General_CI_AS AS ЭлПочта,
-                    ROW_NUMBER() OVER (PARTITION BY Телефон ORDER BY Клиент COLLATE Cyrillic_General_CI_AS ASC) AS RowNum
-                FROM (
-                    SELECT 
-                        Телефон COLLATE Cyrillic_General_CI_AS AS Телефон,
-                        Клиент COLLATE Cyrillic_General_CI_AS AS Клиент,
-                        ЭлПочты COLLATE Cyrillic_General_CI_AS AS ЭлПочты
-                    FROM EventData
-                    WHERE Телефон IS NOT NULL 
-                    AND Телефон <> ''
-                    AND NOT (
-                        Телефон LIKE '7%' OR 
-                        Телефон LIKE '+7%' OR 
-                        Телефон LIKE '8%' OR 
-                        Телефон LIKE '+8%'
-                    )
-                    AND LEN(REPLACE(REPLACE(REPLACE(REPLACE(Телефон, '+', ''), '(', ''), ')', ''), '-', '')) = 10
-                    AND Клиент NOT LIKE '%[^а-яА-Я ]%'
-                    
-                    UNION ALL
-                    
-                    SELECT 
-                        ЗаказНарядЗаказчикТелефон COLLATE Cyrillic_General_CI_AS AS Телефон,
-                        ЗаказНарядЗаказчик COLLATE Cyrillic_General_CI_AS AS Клиент,
-                        ЗаказНарядЗаказчикЭлПочта COLLATE Cyrillic_General_CI_AS AS ЭлПочты
-                    FROM ZN_EventData
-                    WHERE ЗаказНарядЗаказчикТелефон IS NOT NULL 
-                    AND ЗаказНарядЗаказчикТелефон <> ''
-                    AND NOT (
-                        ЗаказНарядЗаказчикТелефон LIKE '7%' OR 
-                        ЗаказНарядЗаказчикТелефон LIKE '+7%' OR 
-                        ЗаказНарядЗаказчикТелефон LIKE '8%' OR 
-                        ЗаказНарядЗаказчикТелефон LIKE '+8%'
-                    )
-                    AND LEN(REPLACE(REPLACE(REPLACE(REPLACE(ЗаказНарядЗаказчикТелефон, '+', ''), '(', ''), ')', ''), '-', '')) = 10
-                    AND ЗаказНарядЗаказчик NOT LIKE '%[^а-яА-Я ]%'
-                ) AS CombinedData
+                    Телефон COLLATE Latin1_General_100_CI_AS_SC_UTF8 AS Телефон,
+                    Клиент COLLATE Latin1_General_100_CI_AS_SC_UTF8 AS ФИО,
+                    ROW_NUMBER() OVER (PARTITION BY Телефон ORDER BY ДатаСобытия DESC, ВремяСобытия DESC) AS RowNum
+                FROM EventData
+                WHERE LEN(Телефон) = 10 AND Телефон LIKE '%[0-9]%' AND Телефон NOT LIKE '%[^0-9]%'
+            ),
+            DistinctEventData AS (
+                SELECT 
+                    Телефон,
+                    ФИО
+                FROM LatestEventData
+                WHERE RowNum = 1
+            ),
+            ZNData AS (
+                SELECT 
+                    ЗаказНарядЗаказчикТелефон COLLATE Latin1_General_100_CI_AS_SC_UTF8 AS Телефон,
+                    ЗаказНарядЗаказчик COLLATE Latin1_General_100_CI_AS_SC_UTF8 AS ЗаказНарядЗаказчик
+                FROM ZN_EventData
+                WHERE LEN(ЗаказНарядЗаказчикТелефон) = 10 AND ЗаказНарядЗаказчикТелефон LIKE '%[0-9]%' AND ЗаказНарядЗаказчикТелефон NOT LIKE '%[^0-9]%'
             )
-            SELECT
-                CONCAT('7', Телефон) AS Телефон,
-                ФИО,
-                ЭлПочта
-            FROM RankedPhones
-            WHERE RowNum = 1";
+            SELECT 
+                '7' + COALESCE(E.Телефон, ZN.Телефон) AS Телефон,
+                CASE 
+                    WHEN ZN.Телефон IS NOT NULL 
+                        THEN ZN.ЗаказНарядЗаказчик
+                    ELSE E.ФИО
+                END AS ФИО
+            FROM DistinctEventData AS E
+            FULL OUTER JOIN ZNData AS ZN
+            ON E.Телефон = ZN.Телефон
+            GROUP BY 
+                COALESCE(E.Телефон, ZN.Телефон),
+                CASE 
+                    WHEN ZN.Телефон IS NOT NULL 
+                        THEN ZN.ЗаказНарядЗаказчик
+                    ELSE E.ФИО
+                END;";
 
         $stmt = $pdo->query($sql);
 

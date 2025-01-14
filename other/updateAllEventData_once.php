@@ -1,5 +1,7 @@
 <?php
 
+ini_set('memory_limit', '7G');  
+
 include_once ("../utils/function1.php");
 
 $now = new DateTime();
@@ -24,7 +26,7 @@ try {
     exit;
 }
 
-for ($i = 4; $i >= 0; $i--) {
+for ($i = 1; $i >= 0; $i--) {
     $datebefore = formatDateTime($now);
     $year = $currentYear - $i;
     echo $year . "\n";
@@ -32,7 +34,7 @@ for ($i = 4; $i >= 0; $i--) {
     $startDate = formatDateTime(new DateTime("$year-01-01 00:00:00"));
     $endDate = formatDateTime(new DateTime("$year-12-31 23:59:59"));
 
-    if($year == $currentYear) {
+    if ($year == $currentYear) {
         $month = $currentMonth - 1;
         $endDate = formatDateTime(new DateTime("$year-$month-$currentDay 23:59:59"));
     }
@@ -84,7 +86,6 @@ for ($i = 4; $i >= 0; $i--) {
                 $event['ВидСобытия'],
                 $event['СсылкаНаЗвонок'],
                 $event['Состояние'],
-                $event['Содержание'],
                 $event['Результат'],
                 $event['Комментарий'],
                 $event['Менеджер'],
@@ -93,13 +94,13 @@ for ($i = 4; $i >= 0; $i--) {
             );
             
             $sql = "INSERT INTO AllEventData (ДатаНачала, ВремяНачала, EventUID, РабочийЛистУИД, РабочийЛистНомер, НомерТелефона, ВидСобытия, СсылкаНаЗвонок, 
-            Состояние, Content, Результат, Комментарий, Менеджер, ДатаОбновления, ВремяОбновления) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            Состояние, Результат, Комментарий, Менеджер, ДатаОбновления, ВремяОбновления) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
             try {
                 $stmt = $conn->prepare($sql);
                 $stmt->execute($params);
-                echo "Данные успешно внесены для Уид: {$event['СобытиеУИД']}.\n";
+                echo "Данные успешно внесены для Уид: {$event['СобытиеУИД']}. ($year $city)\n";
             } catch (PDOException $e) {
                 echo "Ошибка вставки данных для Уид: {$event['СобытиеУИД']} - " . $e->getMessage() . "\n";
             }

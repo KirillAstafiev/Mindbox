@@ -16,16 +16,17 @@ function processClients($data) {
 
         $allClientOrders = getClientOrders($row['Телефон']);
         $allClientWorksheets = getAllClientWorksheets(substr($row['Телефон'], 1));
+        $mindboxId = checkOrderAlreadyExists($row['РабочийЛист'], $allClientOrders);
 
         if (!empty($allClientWorksheets)) {
             $row['Клиент'] = getLongestFullname($allClientWorksheets);
         }
 
-        registration($row['Телефон'], $row['ЭлПочты'], $row['Клиент']) . "\n";
-        $carModelId = $row['ModelId'];
-        $mindboxId = checkOrderAlreadyExists($row['РабочийЛист'], $allClientOrders);
-
-        echo processOrder($row, $carModelId, $mindboxId);
+        $regResult = registration($row['Телефон'], $row['ЭлПочты'], $row['Клиент']) . "\n";  
+              
+        if($regResult == 1) {
+            echo processOrder($row, $row['АвтомобильVIN'], $mindboxId);
+        }
     
         $i++;
     }

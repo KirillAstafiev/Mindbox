@@ -22,7 +22,8 @@ function getClients(){
                     [Клиент],
                     [ЭлПочты],
                     [МаркаАвто],
-                    [МодельАвто]
+                    [МодельАвто],
+                    [АвтомобильVIN]
                 FROM [Mindbox].[dbo].[EventData]
                 WHERE [Телефон] IS NOT NULL 
                 AND [Телефон] <> ''
@@ -34,7 +35,7 @@ function getClients(){
                 )
                 AND LEN(REPLACE(REPLACE(REPLACE(REPLACE([Телефон], '+', ''), '(', ''), ')', ''), '-', '')) = 10
             )
-            SELECT top 2
+            SELECT
                 rp.[ДатаСобытия],
                 rp.[ВремяСобытия],
                 rp.[ВидСобытия],
@@ -46,6 +47,7 @@ function getClients(){
                 rp.[ЭлПочты],
                 rp.[МаркаАвто],
                 rp.[МодельАвто],
+                rp.[АвтомобильVIN],
                 c.[Id] AS ModelId
             FROM RankedPhones rp
             LEFT JOIN [Mindbox].[dbo].[Cars] c

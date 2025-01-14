@@ -5,7 +5,7 @@ include "config/headersJSON.php";
 require "utils/createLinesOrder.php";
 require "queries/getActionsByUid.php";
 
-function processOrder($clientData, $carModelId, $orderMindboxId = null){
+function processOrder($clientData, $carVIN, $orderMindboxId = null){
     global $headers;
     global $endpointId;
 
@@ -27,7 +27,7 @@ function processOrder($clientData, $carModelId, $orderMindboxId = null){
                 "externalOrderId" => $clientData['РабочийЛист'],
                 "mindboxId" => $orderMindboxId
             ],
-            "lines" => createLinesOrder(getActionsByUid($clientData['РабочийЛист']), $carModelId),
+            "lines" => createLinesOrder(getActionsByUid($clientData['РабочийЛист']), $carVIN),
             "customFields" => [
                 "orderStatus" => $clientData['РабочийЛистСтатус'],
                 "workSheetUID" => $clientData['РабочийЛист'],
@@ -49,6 +49,6 @@ function processOrder($clientData, $carModelId, $orderMindboxId = null){
     if ($response['status'] != 'Success') {
         return "Ошибка создания/обновления заказа\n";
     } else {
-        return isset($orderMindboxId) ? "Заказ обновлен" : "Заказ создан";
+        return (isset($orderMindboxId) ? "Заказ обновлен" : "Заказ создан") . "\n";
     }
 }
