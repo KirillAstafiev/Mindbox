@@ -5,7 +5,7 @@ include "config/headersJSON.php";
 require "utils/createLinesOrder.php";
 require "queries/getActionsByUid.php";
 
-function processOrder($clientData, $carVIN, $orderMindboxId = null){
+function processOrder($clientData, $carVIN, $orderMindboxId = null) {
     global $headers;
     global $endpointId;
 

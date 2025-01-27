@@ -4,7 +4,7 @@ include_once("../utils/function1.php");
 
 $now = new DateTime();
 $now->modify('+3 hours');
-$dateFrom = (new DateTime())->modify('-30 days')->format('Ymd');
+$dateFrom = (new DateTime())->modify('-21 days')->format('Ymd');
 $dateBefore = $now->format('Ymd');
 
 $username = 'odata';
@@ -17,9 +17,9 @@ $dbPassword = "123aA123";
 try {
     $conn = new PDO($dsn, $dbUsername, $dbPassword);
     $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    echo "Соединение с базой данных установлено.\n";
+    echo "[EventData] Соединение с базой данных установлено.\n";
 } catch (PDOException $e) {
-    echo "Ошибка подключения к базе данных: " . $e->getMessage();
+    echo "[EventData] Ошибка подключения к базе данных: " . $e->getMessage();
     exit;
 }
 
@@ -35,7 +35,8 @@ $urls = [
 $resultArray = [];
 
 foreach ($urls as $city => $url) {
-    echo "Обработка URL: $city\n";
+    echo "[EventData] Обработка URL: $city\n";
+    echo $url . "\n";
 
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, $url);
@@ -44,10 +45,9 @@ foreach ($urls as $city => $url) {
     curl_setopt($ch, CURLOPT_USERPWD, "$username:$password");
 
     $response = curl_exec($ch);
-    echo $url."\n";
 
     if (curl_errno($ch)) {
-        echo 'Ошибка: ' . curl_error($ch);
+        echo '[EventData] Ошибка: ' . curl_error($ch);
         curl_close($ch);
         continue;
     }
@@ -57,13 +57,13 @@ foreach ($urls as $city => $url) {
     $data = json_decode($response, true);
 
     if (json_last_error() !== JSON_ERROR_NONE) {
-        echo 'Ошибка декодирования JSON: ' . json_last_error_msg();
+        echo '[EventData] Ошибка декодирования JSON: ' . json_last_error_msg();
         continue;
     }
 
     foreach ($data as $event) {
         if (!isset($event['РабочийЛист'])) {
-            echo "Отсутствует поле 'РабочийЛист' в записи.\n";
+            echo "[EventData] Отсутствует поле 'РабочийЛист' в записи.\n";
             continue;
         }
 
@@ -72,16 +72,16 @@ foreach ($urls as $city => $url) {
             if ($date) {
                 $event['ДатаСобытия'] = $date->format('Y-m-d');
             } else {
-                echo "Ошибка преобразования ДатаСобытия: {$event['ДатаСобытия']} не соответствует формату d.m.Y.\n";
+                echo "[EventData] Ошибка преобразования ДатаСобытия: {$event['ДатаСобытия']} не соответствует формату d.m.Y.\n";
             }
         }
-        
+
         if (isset($event['ВремяСобытия'])) {
             $time = DateTime::createFromFormat('H:i:s', $event['ВремяСобытия']);
             if ($time) {
                 $event['ВремяСобытия'] = $time->format('H:i:s.0000000');
             } else {
-                echo "Ошибка преобразования ВремяСобытия: {$event['ВремяСобытия']} не соответствует формату H:i:s.\n";
+                echo "[EventData] Ошибка преобразования ВремяСобытия: {$event['ВремяСобытия']} не соответствует формату H:i:s.\n";
             }
         }
 
@@ -90,6 +90,12 @@ foreach ($urls as $city => $url) {
         $event['Телефон'] = $event['РабочийЛистТелефон'];
         $event['МодельАвто'] = $event['АвтомобильМодель'];
         $event['Организация'] = $event['РабочийЛистОрганизация'];
+        $event['ТипСвязи'] = $event['Тип'];
+        $event['NB'] = $event['АсП'] ? "АСП" : "ОПНА";
+        $event['МаркаАвто'] = $event['АвтомобильМарка'];
+        $event['МодельАвто'] = $event['АвтомобильМодель'];
+        unset($event['АсП']);
+        unset($event['Тип']);
         unset($event['РабочийЛистПричинаОтказа']);
         unset($event['РабочийЛистТелефон']);
         unset($event['КлиентТип']);
@@ -113,25 +119,13 @@ foreach ($urls as $city => $url) {
         $query = "SELECT * FROM EventData WHERE РабочийЛист = ?";
         $stmt = $conn->prepare($query);
         $stmt->execute([$workList]);
-    
+
         $existingData = $stmt->fetch(PDO::FETCH_ASSOC);
-    
+
         // Проверка необходимости обновления
         $updateNeeded = false;
-    
+
         if ($existingData) {
-            // Сравнение полей записи
-            foreach ($event as $key => $value) {
-                if (array_key_exists($key, $existingData) && $key !== 'ДатаОбновления' && $key !== 'ВремяОбновления') {
-                    if ($existingData[$key] != $value) {
-                        echo "\n".$key."\n";
-                        echo "$existingData[$key] -> $value \n";
-                        $updateNeeded = true;
-                        break;
-                    }
-                }
-            }
-    
             // Обработка массива ВариантыАвтомобилей
             if (isset($event['ВариантыАвтомобилей']) && is_array($event['ВариантыАвтомобилей'])) {
                 foreach ($event['ВариантыАвтомобилей'] as $variant) {
@@ -139,7 +133,7 @@ foreach ($urls as $city => $url) {
                         if ($existingData['АвтомобильУИД'] != $variant['АвтомобильУИД'] || $existingData['АвтомобильVIN'] != $variant['АвтомобильVIN']) {
                             echo "АвтомобильУИД: {$existingData['АвтомобильУИД']} -> {$variant['АвтомобильУИД']}\n";
                             echo "АвтомобильVIN: {$existingData['АвтомобильVIN']} -> {$variant['АвтомобильVIN']}\n";
-            
+
                             $event['АвтомобильУИД'] = $variant['АвтомобильУИД'];
                             $event['АвтомобильVIN'] = $variant['АвтомобильVIN'];
                             $updateNeeded = true;
@@ -148,32 +142,46 @@ foreach ($urls as $city => $url) {
                     }
                 }
             }
+        }
 
-            unset($event['ВариантыАвтомобилей']);
-    
+        unset($event['ВариантыАвтомобилей']);
+
+        if ($existingData) {
+            // Сравнение полей записи
+            foreach ($event as $key => $value) {
+                if (array_key_exists($key, $existingData) && $key !== 'ДатаОбновления' && $key !== 'ВремяОбновления') {
+                    if ($existingData[$key] != $value) {
+                        echo "\n" . $key . "\n";
+                        echo "$existingData[$key] -> $value \n";
+                        $updateNeeded = true;
+                        break;
+                    }
+                }
+            }
+
             // Выполнение обновления при необходимости
             if ($updateNeeded) {
                 $updateQuery = "UPDATE EventData SET ДатаОбновления = ?, ВремяОбновления = ?, ";
                 $updateFields = [];
                 $params = [$now->format('Y-m-d'), $now->format('H:i:s')];
-    
+
                 foreach ($event as $key => $value) {
                     if ($key !== 'ДатаОбновления' && $key !== 'ВремяОбновления') {
                         $updateFields[] = "$key = ?";
                         $params[] = $value;
                     }
                 }
-    
+
                 $updateQuery .= implode(', ', $updateFields) . " WHERE РабочийЛист = ?";
                 $params[] = $workList;
-    
+
                 try {
                     $updateStmt = $conn->prepare($updateQuery);
                     $updateStmt->execute($params);
-                    echo "Запись обновлена для РабочийЛист: $workList.\n";
+                    echo "[EventData] Запись обновлена для РабочийЛист: $workList.\n";
                     $resultArray[] = $workList;
                 } catch (PDOException $e) {
-                    echo "Ошибка обновления данных для РабочийЛист: $workList - " . $e->getMessage() . "\n";
+                    echo "[EventData] Ошибка обновления данных для РабочийЛист: $workList - " . $e->getMessage() . "\n";
                 }
             }
         } else {
@@ -181,14 +189,14 @@ foreach ($urls as $city => $url) {
             $insertQuery = "INSERT INTO EventData (" . implode(', ', array_keys($event)) . ", ДатаОбновления, ВремяОбновления)
                             VALUES (" . rtrim(str_repeat('?, ', count($event) + 2), ', ') . ")";
             $params = array_merge(array_values($event), [$now->format('Y-m-d'), $now->format('H:i:s')]);
-    
+
             try {
                 $insertStmt = $conn->prepare($insertQuery);
                 $insertStmt->execute($params);
-                echo "Новая запись добавлена для РабочийЛист: $workList.\n";
+                echo "[EventData] Новая запись добавлена для РабочийЛист: $workList.\n";
                 $resultArray[] = $workList;
             } catch (PDOException $e) {
-                echo "Ошибка вставки данных для РабочийЛист: $workList - " . $e->getMessage() . "\n";
+                echo "[EventData] Ошибка вставки данных для РабочийЛист: $workList - " . $e->getMessage() . "\n";
             }
         }
     }
@@ -196,8 +204,6 @@ foreach ($urls as $city => $url) {
 
 $conn = null;
 
-echo "Обработка завершена. Итоговые РабочиеЛисты: " . implode(', ', $resultArray) . "\n";
+echo "[EventData] Обработка завершена.\n";
 
 return $resultArray;
-
-?>

@@ -2,7 +2,8 @@
 
 include "config/settings.php";
 
-function getCarsByVIN($vins) {
+function getCarsByVIN($vins)
+{
     $headers = [
         'Content-Type: application/json',
         'Accept: application/json',
@@ -25,7 +26,7 @@ function getCarsByVIN($vins) {
     foreach ($urls as $city => $url) {
         try {
             $ch = curl_init();
-        
+
             curl_setopt($ch, CURLOPT_CAINFO, 'C:/Certificates/cacert.pem');
             curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -37,7 +38,7 @@ function getCarsByVIN($vins) {
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
             curl_setopt($ch, CURLOPT_USERPWD, "$username:$password");
-            
+
             $responseRaw = curl_exec($ch);
 
             if (curl_errno($ch)) {

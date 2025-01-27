@@ -1,6 +1,6 @@
 <?php
 
-include_once ("../utils/function1.php");
+include_once("../utils/function1.php");
 
 $now = new DateTime();
 $now->modify('+3 hours');
@@ -24,16 +24,19 @@ try {
     exit;
 }
 
-for ($i = 4; $i >= 0; $i--) {
+for ($i = ($currentYear - 2020); $i >= 0; $i--) {
     $datebefore = formatDateTime($now);
     $year = $currentYear - $i;
 
     $startDate = formatDateTime(new DateTime("$year-01-01 00:00:00"));
     $endDate = formatDateTime(new DateTime("$year-12-31 23:59:59"));
 
-    if($year == $currentYear) {
-        $month = $currentMonth - 1;
-        $endDate = formatDateTime(new DateTime("$year-$month-$currentDay 23:59:59"));
+    if ($year == $currentYear) {
+        $startDate = $year . "0101000000";
+        $endDate = $year . str_pad($currentMonth, 2, "0", STR_PAD_LEFT) . str_pad($currentDay - 1, 2, "0", STR_PAD_LEFT) . "235959";
+    } else {
+        $startDate = formatDateTime(new DateTime("$year-01-01 00:00:00"));
+        $endDate = formatDateTime(new DateTime("$year-12-31 23:59:59"));
     }
 
     $urls = [
@@ -46,9 +49,9 @@ for ($i = 4; $i >= 0; $i--) {
     ];
 
     foreach ($urls as $city => $url) {
-        echo "Обработка: $city $year \n";
-        echo "$url \n";
-        
+        echo "Обработка URL: $city $year\n";
+        echo $url, "\n";
+
         $ch = curl_init();
 
         curl_setopt($ch, CURLOPT_URL, $url);
@@ -75,7 +78,7 @@ for ($i = 4; $i >= 0; $i--) {
 
         foreach ($data as $item) {
             if (!isset($item['АвтомобильУИД'], $item['АвтомобильVIN'])) {
-                echo "Некоторые данные отсутствуют для города: $city\n";
+                echo "[$year $city] Некоторые данные отсутствуют для города: $city\n";
                 continue;
             }
 
@@ -125,7 +128,7 @@ for ($i = 4; $i >= 0; $i--) {
                 $orderCustomerSMSConsent = $ZN['ЗаказНарядЗаказчикСогласиеНаПолучениеСМС'] ?? null;
                 $orderCustomerAdRefusal = $ZN['ЗаказНарядЗаказчикОтказОтРекламы'] ?? null;
                 $vehicleMileage = $ZN['АвтомобильПробег'] ?? null;
-                
+
                 $sql = "INSERT INTO ZN_EventData (
                         Организация, ОрганизацияУИД, Подразделение, ПодразделениеУИД, ЗаказНарядНомер, 
                         ЗаказНарядУИД, ЗаказНарядДатаСоздания, ЗаказНарядВремяСоздания, ЗаказНарядДатаЗакрытия, 
@@ -189,12 +192,12 @@ for ($i = 4; $i >= 0; $i--) {
                         ':vehicleMileage' => $vehicleMileage,
                     ]);
 
-                    echo "Данные успешно вставлены.\n";
+                    echo "[$year $city] Данные успешно вставлены.\n";
                 } catch (PDOException $e) {
-                    echo "Ошибка вставки данных: " . $e->getMessage() . "\n";
+                    echo "[$year $city] Ошибка вставки данных: " . $e->getMessage() . "\n";
                 }
 
-                foreach($ZN['Работы'] as $work) {
+                foreach ($ZN['Работы'] as $work) {
                     if (!isset($work['Цех'])) {
                         echo "Некоторые данные отсутствуют для ZN: $work\n";
                         continue;
@@ -242,10 +245,10 @@ for ($i = 4; $i >= 0; $i--) {
                             ':orderUID' => $orderUID
                         ]);
 
-                        echo "Данные успешно вставлены для работы: $workDescription\n";
+                        echo "[$year $city] Данные успешно вставлены для работы: $workDescription\n";
                     } catch (PDOException $e) {
-                        echo "Ошибка вставки данных: " . $e->getMessage() . "\n";
-                    }       
+                        echo "[$year $city] Ошибка вставки данных: " . $e->getMessage() . "\n";
+                    }
                 }
             }
         }
@@ -274,4 +277,3 @@ for ($i = 4; $i >= 0; $i--) {
 $conn = null;
 
 echo "Все данные успешно обработаны.\n";
-?>

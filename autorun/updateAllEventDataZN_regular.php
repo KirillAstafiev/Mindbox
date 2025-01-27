@@ -17,9 +17,9 @@ $dbPassword = "123aA123";
 try {
     $conn = new PDO($dsn, $dbUsername, $dbPassword);
     $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    echo "Соединение с базой данных установлено.\n";
+    echo "[ZN_AllEventData] Соединение с базой данных установлено.\n";
 } catch (PDOException $e) {
-    echo "Ошибка подключения к базе данных: " . $e->getMessage();
+    echo "[ZN_AllEventData] Ошибка подключения к базе данных: " . $e->getMessage();
     exit;
 }
 
@@ -32,10 +32,8 @@ $urls = [
     "Смоленск" => "http://192.168.101.2/aa5_smolensk/hs/marketing/sales/service?DateFrom={$dateFrom}&DateBefore={$dateBefore}",
 ];
 
-$resultArray = [];
-
 foreach ($urls as $city => $url) {
-    echo "Обработка URL: $city\n";
+    echo "[ZN_AllEventData] Обработка URL: $city\n";
     echo $url."\n";
 
     $ch = curl_init();
@@ -47,7 +45,7 @@ foreach ($urls as $city => $url) {
     $response = curl_exec($ch);
 
     if (curl_errno($ch)) {
-        echo 'Ошибка: ' . curl_error($ch);
+        echo '[ZN_AllEventData] Ошибка: ' . curl_error($ch);
         curl_close($ch);
         continue;
     }
@@ -57,7 +55,7 @@ foreach ($urls as $city => $url) {
     $data = json_decode($response, true);
 
     if (json_last_error() !== JSON_ERROR_NONE) {
-        echo 'Ошибка декодирования JSON: ' . json_last_error_msg();
+        echo '[ZN_AllEventData] Ошибка декодирования JSON: ' . json_last_error_msg();
         continue;
     }
 
@@ -65,7 +63,7 @@ foreach ($urls as $city => $url) {
         foreach($event['ЗаказНаряды'] as $worksheet) {
             foreach($worksheet['Работы'] as $alleventdata) {
                 if (!isset($alleventdata['АвтоработаУИД'])) {
-                    echo "Отсутствует поле 'АвтоработаУИД' в записи.\n";
+                    echo "[ZN_AllEventData] Отсутствует поле 'АвтоработаУИД' в записи.\n";
                     continue;
                 }
 
@@ -124,9 +122,9 @@ foreach ($urls as $city => $url) {
                         try {
                             $updateStmt = $conn->prepare($updateQuery);
                             $updateStmt->execute($params);
-                            echo "Запись обновлена для АвтоработаУИД: $workUid + $worksheetUid.\n";
+                            echo "[ZN_AllEventData] Запись обновлена для АвтоработаУИД: $workUid + $worksheetUid.\n";
                         } catch (PDOException $e) {
-                            echo "Ошибка обновления данных для АвтоработаУИД: $workUid + $worksheetUid - " . $e->getMessage() . "\n";
+                            echo "[ZN_AllEventData] Ошибка обновления данных для АвтоработаУИД: $workUid + $worksheetUid - " . $e->getMessage() . "\n";
                             echo "\n".$updateQuery;
                         }
                     }
@@ -139,9 +137,9 @@ foreach ($urls as $city => $url) {
                     try {
                         $insertStmt = $conn->prepare($insertQuery);
                         $insertStmt->execute($params);
-                        echo "Новая запись добавлена для АвтоработаУИД: $workUid.\n";
+                        echo "[ZN_AllEventData] Новая запись добавлена для АвтоработаУИД: $workUid.\n";
                     } catch (PDOException $e) {
-                        echo "Ошибка вставки данных для АвтоработаУИД: $workUid - " . $e->getMessage() . "\n";
+                        echo "[ZN_AllEventData] Ошибка вставки данных для АвтоработаУИД: $workUid - " . $e->getMessage() . "\n";
                     }
                 }
             }
@@ -151,8 +149,4 @@ foreach ($urls as $city => $url) {
 
 $conn = null;
 
-echo "Обработка завершена.";
-
-return $resultArray;
-
-?>
+echo "[ZN_AllEventData] Обработка завершена.";

@@ -28,9 +28,9 @@ $dbPassword = "123aA123";
 try {
     $conn = new PDO($dsn, $dbUsername, $dbPassword);
     $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    echo "Соединение с базой данных установлено.\n";
+    echo "[AllEventData] Соединение с базой данных установлено.\n";
 } catch (PDOException $e) {
-    echo "Ошибка подключения к базе данных: " . $e->getMessage();
+    echo "[AllEventData] Ошибка подключения к базе данных: " . $e->getMessage();
     exit;
 }
 
@@ -46,7 +46,7 @@ $urls = [
 $resultArray = [];
 
 foreach ($urls as $city => $url) {
-    echo "Обработка URL: $city\n";
+    echo "[AllEventData] Обработка URL: $city\n";
     echo $url."\n";
 
     $ch = curl_init();
@@ -59,7 +59,7 @@ foreach ($urls as $city => $url) {
     
 
     if (curl_errno($ch)) {
-        echo 'Ошибка: ' . curl_error($ch);
+        echo '[AllEventData] Ошибка: ' . curl_error($ch);
         curl_close($ch);
         continue;
     }
@@ -69,13 +69,13 @@ foreach ($urls as $city => $url) {
     $data = json_decode($response, true);
 
     if (json_last_error() !== JSON_ERROR_NONE) {
-        echo 'Ошибка декодирования JSON: ' . json_last_error_msg();
+        echo '[AllEventData] Ошибка декодирования JSON: ' . json_last_error_msg();
         continue;
     }
 
     foreach ($data as $event) {
         if (!isset($event['РабочийЛистУИД'])) {
-            echo "Отсутствует поле 'РабочийЛистУИД' в записи.\n";
+            echo "[AllEventData] Отсутствует поле 'РабочийЛистУИД' в записи.\n";
             continue;
         }
         
@@ -143,10 +143,10 @@ foreach ($urls as $city => $url) {
                 try {
                     $updateStmt = $conn->prepare($updateQuery);
                     $updateStmt->execute($params);
-                    echo "Запись обновлена для EventUID: $eventUid.\n";
+                    echo "[AllEventData] Запись обновлена для EventUID: $eventUid.\n";
                     $resultArray[] = $workList;
                 } catch (PDOException $e) {
-                    echo "Ошибка обновления данных для EventUID: $eventUid - " . $e->getMessage() . "\n";
+                    echo "[AllEventData] Ошибка обновления данных для EventUID: $eventUid - " . $e->getMessage() . "\n";
                 }
             } 
         } else {
@@ -158,9 +158,9 @@ foreach ($urls as $city => $url) {
             try {
                 $insertStmt = $conn->prepare($insertQuery);
                 $insertStmt->execute($params);
-                echo "Новая запись добавлена для EventUID: $eventUid.\n";
+                echo "[AllEventData] Новая запись добавлена для EventUID: $eventUid.\n";
             } catch (PDOException $e) {
-                echo "Ошибка вставки данных для EventUID: $eventUid - " . $e->getMessage() . "\n";
+                echo "[AllEventData] Ошибка вставки данных для EventUID: $eventUid - " . $e->getMessage() . "\n";
             }
         }
     }
@@ -168,6 +168,6 @@ foreach ($urls as $city => $url) {
 
 $conn = null;
 
-echo "Обработка завершена";
+echo "[AllEventData] Обработка завершена";
 
 return $resultArray;

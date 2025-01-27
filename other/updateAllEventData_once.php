@@ -1,8 +1,8 @@
 <?php
 
-ini_set('memory_limit', '7G');  
+ini_set('memory_limit', '7G');
 
-include_once ("../utils/function1.php");
+include_once("../utils/function1.php");
 
 $now = new DateTime();
 $now->modify('+3 hours');
@@ -26,7 +26,7 @@ try {
     exit;
 }
 
-for ($i = 1; $i >= 0; $i--) {
+for ($i = ($currentYear - 2020); $i >= 0; $i--) {
     $datebefore = formatDateTime($now);
     $year = $currentYear - $i;
     echo $year . "\n";
@@ -35,8 +35,11 @@ for ($i = 1; $i >= 0; $i--) {
     $endDate = formatDateTime(new DateTime("$year-12-31 23:59:59"));
 
     if ($year == $currentYear) {
-        $month = $currentMonth - 1;
-        $endDate = formatDateTime(new DateTime("$year-$month-$currentDay 23:59:59"));
+        $startDate = $year . "0101000000";
+        $endDate = $year . str_pad($currentMonth, 2, "0", STR_PAD_LEFT) . str_pad($currentDay - 1, 2, "0", STR_PAD_LEFT) . "235959";
+    } else {
+        $startDate = formatDateTime(new DateTime("$year-01-01 00:00:00"));
+        $endDate = formatDateTime(new DateTime("$year-12-31 23:59:59"));
     }
 
     $urls = [
@@ -49,8 +52,9 @@ for ($i = 1; $i >= 0; $i--) {
     ];
 
     foreach ($urls as $city => $url) {
-        echo "Обработка URL: $city\n";
-        
+        echo "Обработка URL: $city $year\n";
+        echo $url, "\n";
+
         $ch = curl_init();
 
         curl_setopt($ch, CURLOPT_URL, $url);
@@ -82,27 +86,23 @@ for ($i = 1; $i >= 0; $i--) {
                 $event['СобытиеУИД'],
                 $event['РабочийЛистУИД'],
                 $event['РабочийЛистНомер'],
-                $event['РабочийЛистНомерТелефона'],
                 $event['ВидСобытия'],
-                $event['СсылкаНаЗвонок'],
                 $event['Состояние'],
-                $event['Результат'],
-                $event['Комментарий'],
                 $event['Менеджер'],
                 $now->format('Y-m-d'),
                 $now->format('H:i:s')
             );
-            
-            $sql = "INSERT INTO AllEventData (ДатаНачала, ВремяНачала, EventUID, РабочийЛистУИД, РабочийЛистНомер, НомерТелефона, ВидСобытия, СсылкаНаЗвонок, 
-            Состояние, Результат, Комментарий, Менеджер, ДатаОбновления, ВремяОбновления) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+            $sql = "INSERT INTO AllEventData (ДатаНачала, ВремяНачала, EventUID, РабочийЛистУИД, РабочийЛистНомер, ВидСобытия,  
+            Состояние, Менеджер, ДатаОбновления, ВремяОбновления) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
             try {
                 $stmt = $conn->prepare($sql);
                 $stmt->execute($params);
-                echo "Данные успешно внесены для Уид: {$event['СобытиеУИД']}. ($year $city)\n";
+                echo "[$year $city] Данные успешно внесены для Уид: {$event['СобытиеУИД']}.\n";
             } catch (PDOException $e) {
-                echo "Ошибка вставки данных для Уид: {$event['СобытиеУИД']} - " . $e->getMessage() . "\n";
+                echo "[$year $city] Ошибка вставки данных для Уид: {$event['СобытиеУИД']} - " . $e->getMessage() . "\n";
             }
         }
     }
@@ -110,5 +110,4 @@ for ($i = 1; $i >= 0; $i--) {
 
 $conn = null;
 
-echo "Все данные успешно внесены в таблицу и очищены от строк с пустыми номерами телефонов.";
-?>
+echo "Вставка данных завершена";

@@ -6,7 +6,8 @@ require "utils/formatDateTime.php";
 require "utils/createLinesOrderZN.php";
 require "queries/getActionsByUidZN.php";
 
-function processOrderZN($clientData, $carData, $orderMindboxId = null){
+function processOrderZN($clientData, $carData, $orderMindboxId = null)
+{
     global $headers;
     global $endpointId;
 

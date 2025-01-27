@@ -1,6 +1,6 @@
 <?php
 
-include_once ("../utils/function1.php");
+include_once("../utils/function1.php");
 
 $now = new DateTime();
 $now->modify('+3 hours');
@@ -24,7 +24,7 @@ try {
     exit;
 }
 
-for ($i = 4; $i >= 0; $i--) {
+for ($i = ($currentYear - 2020); $i >= 0; $i--) {
     $datebefore = formatDateTime($now);
     $year = $currentYear - $i;
     echo $year . "\n";
@@ -32,9 +32,12 @@ for ($i = 4; $i >= 0; $i--) {
     $startDate = formatDateTime(new DateTime("$year-01-01 00:00:00"));
     $endDate = formatDateTime(new DateTime("$year-12-31 23:59:59"));
 
-    if($year == $currentYear){
-        $month = $currentMonth - 1;
-        $endDate = formatDateTime(new DateTime("$year-$month-$currentDay 23:59:59"));
+    if ($year == $currentYear) {
+        $startDate = $year . "0101000000";
+        $endDate = $year . str_pad($currentMonth, 2, "0", STR_PAD_LEFT) . str_pad($currentDay - 1, 2, "0", STR_PAD_LEFT) . "235959";
+    } else {
+        $startDate = formatDateTime(new DateTime("$year-01-01 00:00:00"));
+        $endDate = formatDateTime(new DateTime("$year-12-31 23:59:59"));
     }
 
     $urls = [
@@ -47,41 +50,42 @@ for ($i = 4; $i >= 0; $i--) {
     ];
 
     foreach ($urls as $city => $url) {
-        echo "Обработка URL: $city\n";
-        
+        echo "Обработка URL: $city $year\n";
+        echo $url, "\n";
+
         $ch = curl_init();
-    
+
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
         curl_setopt($ch, CURLOPT_USERPWD, "$username:$password");
-    
+
         $response = curl_exec($ch);
-    
+
         if (curl_errno($ch)) {
             echo 'Ошибка: ' . curl_error($ch);
             curl_close($ch);
             continue;
         }
-    
+
         curl_close($ch);
-    
+
         $data = json_decode($response, true);
-    
+
         if (json_last_error() !== JSON_ERROR_NONE) {
             echo 'Ошибка декодирования JSON: ' . json_last_error_msg();
             continue;
         }
-    
+
         foreach ($data as $event) {
             if (!isset($event['ДатаСобытия'], $event['ВремяСобытия'], $event['Уид'], $event['ВидСобытия'], $event['РабочийЛист'])) {
                 echo 'Некоторые данные отсутствуют в записи.';
                 continue;
             }
-    
+
             $phone = decodeIncorrectEncoding($event['Телефон']);
             $workListPhone = decodeIncorrectEncoding($event['РабочийЛистТелефон']);
-        
+
             $utm_sourсe = $event['РабочийЛист_utm_source'];
             $utm_sourсeSob = $event['Событие_utm_source'];
             if (!empty($utm_sourсeSob) && $utm_sourсeSob !== $utm_sourсe) {
@@ -100,9 +104,9 @@ for ($i = 4; $i >= 0; $i--) {
 
             $result = $utm_sourсe . '+' . $utm_medium;
             $ASPID = $event['АсП'] ? 1 : 0;
-        
+
             $number1 = crc32($city);
-        
+
             if ($ASPID === 1) {
                 // Действия, если $ASPID равно 1 (true)
                 $number2 = "000";
@@ -113,12 +117,12 @@ for ($i = 4; $i >= 0; $i--) {
                 $brend =  $event['АвтомобильМарка'];
                 $NB =  "ОПНА";
             }
-        
-            $siteID = $number1 .$ASPID . $number2;
+
+            $siteID = $number1 . $ASPID . $number2;
 
             $carVIN = $event['ВариантыАвтомобилей'][0]['АвтомобильVIN'] ?? null;
             $carUID = $event['ВариантыАвтомобилей'][0]['АвтомобильУИД'] ?? null;
-    
+
             $params = array(
                 formatDate($event['ДатаСобытия']),
                 formatTime($event['ВремяСобытия']),
@@ -140,8 +144,6 @@ for ($i = 4; $i >= 0; $i--) {
                 $event['ЭлПочты'],
                 $event['РабочийЛистПодразделение'],
                 $event['МенеджерПодразделение'],
-                $result,
-                $siteID,
                 $NB,  // Направление бизнеса
                 $carUID,
                 $carVIN,
@@ -154,9 +156,9 @@ for ($i = 4; $i >= 0; $i--) {
 
             $sql = "INSERT INTO EventData (ДатаСобытия, ВремяСобытия, Уид, ВидСобытия, РабочийЛист, Клиент, РабочийЛистНомер, РабочийЛистСтатус, ПричинаОтказа, Телефон,
             МаркаАвто, МодельАвто, Организация, ТипСвязи, Менеджер, Автор, ДиалогИД, ЭлПочты, РабочийЛистПодразделение, МенеджерПодразделение,
-            result,  site_id, NB, АвтомобильУИД, АвтомобильVIN, НаселенныйПункт, КлиентСогласиеНаПолучениеСМС, КлиентОтказОтРекламы, ДатаОбновления, ВремяОбновления) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-    
+            NB, АвтомобильУИД, АвтомобильVIN, НаселенныйПункт, КлиентСогласиеНаПолучениеСМС, КлиентОтказОтРекламы, ДатаОбновления, ВремяОбновления) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
+
             try {
                 $stmt = $conn->prepare($sql);
                 $stmt->execute($params);
@@ -171,5 +173,3 @@ for ($i = 4; $i >= 0; $i--) {
 $conn = null;
 
 echo "Данные добавлены";
-
-?>

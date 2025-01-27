@@ -4,7 +4,7 @@ include_once("../utils/function1.php");
 
 $now = new DateTime();
 $now->modify('+3 hours');
-$dateFrom = (new DateTime())->modify('-30 days')->format('Ymd');
+$dateFrom = (new DateTime())->modify('-21 days')->format('Ymd');
 $dateBefore = $now->format('Ymd');
 
 $username = 'odata';
@@ -17,9 +17,9 @@ $dbPassword = "123aA123";
 try {
     $conn = new PDO($dsn, $dbUsername, $dbPassword);
     $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    echo "Соединение с базой данных установлено.\n";
+    echo "[ZN_EventData] Соединение с базой данных установлено.\n";
 } catch (PDOException $e) {
-    echo "Ошибка подключения к базе данных: " . $e->getMessage();
+    echo "[ZN_EventData] Ошибка подключения к базе данных: " . $e->getMessage();
     exit;
 }
 
@@ -35,8 +35,8 @@ $urls = [
 $resultArray = [];
 
 foreach ($urls as $city => $url) {
-    echo "Обработка URL: $city\n";
-    echo $url."\n";
+    echo "[ZN_EventData] Обработка URL: $city\n";
+    echo $url . "\n";
 
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, $url);
@@ -47,7 +47,7 @@ foreach ($urls as $city => $url) {
     $response = curl_exec($ch);
 
     if (curl_errno($ch)) {
-        echo 'Ошибка: ' . curl_error($ch);
+        echo '[ZN_EventData] Ошибка: ' . curl_error($ch);
         curl_close($ch);
         continue;
     }
@@ -57,14 +57,14 @@ foreach ($urls as $city => $url) {
     $data = json_decode($response, true);
 
     if (json_last_error() !== JSON_ERROR_NONE) {
-        echo 'Ошибка декодирования JSON: ' . json_last_error_msg();
+        echo '[ZN_EventData] Ошибка декодирования JSON: ' . json_last_error_msg();
         continue;
     }
 
     foreach ($data as $event) {
-        foreach($event['ЗаказНаряды'] as $worksheet) {
+        foreach ($event['ЗаказНаряды'] as $worksheet) {
             if (!isset($worksheet['ЗаказНарядУИД'])) {
-                echo "Отсутствует поле 'ЗаказНарядУИД' в записи.\n";
+                echo "[ZN_EventData] Отсутствует поле 'ЗаказНарядУИД' в записи.\n";
                 continue;
             }
 
@@ -73,16 +73,16 @@ foreach ($urls as $city => $url) {
                 if ($date) {
                     $worksheet['ЗаказНарядДатаСоздания'] = $date->format('Y-m-d');
                 } else {
-                    echo "Ошибка преобразования ЗаказНарядДатаСоздания: {$worksheet['ЗаказНарядДатаСоздания']} не соответствует формату d.m.Y.\n";
+                    echo "[ZN_EventData] Ошибка преобразования ЗаказНарядДатаСоздания: {$worksheet['ЗаказНарядДатаСоздания']} не соответствует формату d.m.Y.\n";
                 }
             }
-            
+
             if (isset($worksheet['ЗаказНарядВремяСоздания'])) {
                 $time = DateTime::createFromFormat('H:i:s', $worksheet['ЗаказНарядВремяСоздания']);
                 if ($time) {
                     $worksheet['ЗаказНарядВремяСоздания'] = $time->format('H:i:s.0000000');
                 } else {
-                    echo "Ошибка преобразования ЗаказНарядВремяСоздания: {$worksheet['ЗаказНарядВремяСоздания']} не соответствует формату H:i:s.\n";
+                    echo "[ZN_EventData] Ошибка преобразования ЗаказНарядВремяСоздания: {$worksheet['ЗаказНарядВремяСоздания']} не соответствует формату H:i:s.\n";
                 }
             }
 
@@ -91,7 +91,7 @@ foreach ($urls as $city => $url) {
                 if ($date) {
                     $worksheet['ЗаказНарядДатаЗакрытия'] = $date->format('Y-m-d');
                 } else {
-                    echo "Ошибка преобразования ЗаказНарядДатаЗакрытия: {$worksheet['ЗаказНарядДатаСоздания']} не соответствует формату d.m.Y.\n";
+                    echo "[ZN_EventData] Ошибка преобразования ЗаказНарядДатаЗакрытия: {$worksheet['ЗаказНарядДатаСоздания']} не соответствует формату d.m.Y.\n";
                 }
             }
 
@@ -100,7 +100,7 @@ foreach ($urls as $city => $url) {
                 if ($time) {
                     $worksheet['ЗаказНарядВремяЗакрытия'] = $time->format('H:i:s.0000000');
                 } else {
-                    echo "Ошибка преобразования ЗаказНарядВремяЗакрытия: {$worksheet['ЗаказНарядВремяЗакрытия']} не соответствует формату H:i:s.\n";
+                    echo "[ZN_EventData] Ошибка преобразования ЗаказНарядВремяЗакрытия: {$worksheet['ЗаказНарядВремяЗакрытия']} не соответствует формату H:i:s.\n";
                 }
             }
 
@@ -109,7 +109,7 @@ foreach ($urls as $city => $url) {
                 if ($date) {
                     $worksheet['ЗаказНарядПлановаяДатаВыдачи'] = $date->format('Y-m-d');
                 } else {
-                    echo "Ошибка преобразования ЗаказНарядПлановаяДатаВыдачи: {$worksheet['ЗаказНарядПлановаяДатаВыдачи']} не соответствует формату d.m.Y.\n";
+                    echo "[ZN_EventData] Ошибка преобразования ЗаказНарядПлановаяДатаВыдачи: {$worksheet['ЗаказНарядПлановаяДатаВыдачи']} не соответствует формату d.m.Y.\n";
                 }
             }
 
@@ -118,7 +118,7 @@ foreach ($urls as $city => $url) {
                 if ($time) {
                     $worksheet['ЗаказНарядПлановоеВремяВыдачи'] = $time->format('H:i:s.0000000');
                 } else {
-                    echo "Ошибка преобразования ЗаказНарядПлановоеВремяВыдачи: {$worksheet['ЗаказНарядПлановоеВремяВыдачи']} не соответствует формату H:i:s.\n";
+                    echo "[ZN_EventData] Ошибка преобразования ЗаказНарядПлановоеВремяВыдачи: {$worksheet['ЗаказНарядПлановоеВремяВыдачи']} не соответствует формату H:i:s.\n";
                 }
             }
 
@@ -130,7 +130,7 @@ foreach ($urls as $city => $url) {
                     $worksheet['ЗаказНарядФактическаяДатаВыдачи'] = '1900-01-01';
                 }
             }
-            
+
             if (isset($worksheet['ЗаказНарядФактическоеВремяВыдачи'])) {
                 $time = DateTime::createFromFormat('H:i:s', $worksheet['ЗаказНарядФактическоеВремяВыдачи']);
                 if ($time) {
@@ -141,7 +141,7 @@ foreach ($urls as $city => $url) {
             }
 
             if (
-                empty($worksheet['ЗаказНарядФактическаяДатаВыдачи']) || 
+                empty($worksheet['ЗаказНарядФактическаяДатаВыдачи']) ||
                 $worksheet['ЗаказНарядФактическаяДатаВыдачи'] === '1900-01-01' ||
                 empty($worksheet['ЗаказНарядФактическоеВремяВыдачи'])
             ) {
@@ -161,8 +161,8 @@ foreach ($urls as $city => $url) {
                 $worksheet['ЗаказНарядСтатус'] = 'Выдано';
             } else {
                 $worksheet['ЗаказНарядСтатус'] = 'Завершено';
-            }     
-         
+            }
+
             $worksheet['Автомобиль'] = $event['Автомобиль'];
             $worksheet['АвтомобильУИД'] = $event['АвтомобильУИД'];
             $worksheet['АвтомобильVIN'] = $event['АвтомобильVIN'];
@@ -189,7 +189,7 @@ foreach ($urls as $city => $url) {
             $query = "SELECT * FROM ZN_EventData WHERE ЗаказНарядУИД = ?";
             $stmt = $conn->prepare($query);
             $stmt->execute([$workList]);
-        
+
             $existingData = $stmt->fetch(PDO::FETCH_ASSOC);
             $updateNeeded = false;
 
@@ -198,37 +198,37 @@ foreach ($urls as $city => $url) {
                 foreach ($worksheet as $key => $value) {
                     if (array_key_exists($key, $existingData) && $key !== 'ДатаОбновления' && $key !== 'ВремяОбновления') {
                         if (trim($existingData[$key]) != trim($value)) {
-                            echo "\n".$key."\n";
+                            echo "\n" . $key . "\n";
                             echo "$existingData[$key] -> $value \n";
                             $updateNeeded = true;
                             break;
                         }
                     }
                 }
-        
+
                 // Выполнение обновления при необходимости
                 if ($updateNeeded) {
                     $updateQuery = "UPDATE ZN_EventData SET ДатаОбновления = ?, ВремяОбновления = ?, ";
                     $updateFields = [];
                     $params = [$now->format('Y-m-d'), $now->format('H:i:s')];
-                    
+
                     foreach ($worksheet as $key => $value) {
                         if ($key !== 'ДатаОбновления' && $key !== 'ВремяОбновления') {
                             $updateFields[] = "$key = ?";
                             $params[] = $value;
                         }
                     }
-        
+
                     $updateQuery .= implode(', ', $updateFields) . " WHERE ЗаказНарядУИД = ?";
                     $params[] = $workList;
-        
+
                     try {
                         $updateStmt = $conn->prepare($updateQuery);
                         $updateStmt->execute($params);
-                        echo "Запись обновлена для ЗаказНарядУИД: $workList.\n";
+                        echo "[ZN_EventData] Запись обновлена для ЗаказНарядУИД: $workList.\n";
                         $resultArray[] = $workList;
                     } catch (PDOException $e) {
-                        echo "Ошибка обновления данных для ЗаказНарядУИД: $workList - " . $e->getMessage() . "\n";
+                        echo "[ZN_EventData] Ошибка обновления данных для ЗаказНарядУИД: $workList - " . $e->getMessage() . "\n";
                     }
                 }
             } else {
@@ -236,14 +236,14 @@ foreach ($urls as $city => $url) {
                 $insertQuery = "INSERT INTO ZN_EventData (" . implode(', ', array_keys($worksheet)) . ", ДатаОбновления, ВремяОбновления)
                                 VALUES (" . rtrim(str_repeat('?, ', count($worksheet) + 2), ', ') . ")";
                 $params = array_merge(array_values($worksheet), [$now->format('Y-m-d'), $now->format('H:i:s')]);
-        
+
                 try {
                     $insertStmt = $conn->prepare($insertQuery);
                     $insertStmt->execute($params);
-                    echo "Новая запись добавлена для ЗаказНарядУИД: $workList.\n";
+                    echo "[ZN_EventData] Новая запись добавлена для ЗаказНарядУИД: $workList.\n";
                     $resultArray[] = $workList;
                 } catch (PDOException $e) {
-                    echo "Ошибка вставки данных для ЗаказНарядУИД: $workList - " . $e->getMessage() . "\n";
+                    echo "[ZN_EventData] Ошибка вставки данных для ЗаказНарядУИД: $workList - " . $e->getMessage() . "\n";
                 }
             }
         }
@@ -252,8 +252,6 @@ foreach ($urls as $city => $url) {
 
 $conn = null;
 
-echo "Обработка завершена. Итоговые ЗаказНаряды: " . implode(', ', $resultArray) . "\n";
+echo "[ZN_EventData] Обработка завершена.\n";
 
 return $resultArray;
-
-?>
